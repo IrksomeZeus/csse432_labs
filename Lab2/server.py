@@ -1,3 +1,7 @@
+# Douglas Wise and Austin Yates
+# CSSE432 Computer Networks - Lab 2
+# March 31, 2017
+
 from socket import *
 import os.path
 serverPort = 12000
@@ -8,19 +12,35 @@ def main():
     serverSocket = socket(AF_INET, SOCK_STREAM)
     serverSocket.bind(('',serverPort))
     serverSocket.listen(1)
-    print "The server is ready to receive."
+    print "The server has started.\nUse ctrl-c to quit."
     while 1:
         connectionSocket, addr = serverSocket.accept()
         clientInput = connectionSocket.recv(1024)
         tokens = clientInput.split(' ', 1)
         command = tokens[0]
         if command == 'iWant':
-            connectionSocket.send('Request received for ' + tokens[1])
             print 'Request received for ' + tokens[1]
             sendFile(connectionSocket, tokens[1])
             connectionSocket.shutdown(SHUT_WR)
         elif command == 'uTake':
-            pass
+            path = './store/'
+            fileName = tokens[1]
+            new_path = raw_input('Save Directory (default is ./store/):')
+            if new_path != '':
+                path = new_path
+            print 'Saving ' + fileName + ' to ' + path
+            path = path + fileName
+            fileMessage = connectionSocket.recv(1024)
+            test = fileMessage.split(":", 1)
+            if test[0] == "Failure":
+                print fileMessage
+            else:
+                f = open(path, 'wb')
+                while fileMessage:
+                    f.write(fileMessage)
+                    fileMessage = connectionSocket.recv(1024)
+                print 'Receive complete.'
+                f.close()
         else:
             print ('That just ain\'t right! Bad command: '+ clientInput)
             connectionSocket.send('That just ain\'t right!')
