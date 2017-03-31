@@ -1,4 +1,5 @@
 from socket import *
+import os.path
 serverPort = 12000
 serverSocket = 0
 
@@ -26,8 +27,8 @@ def main():
         connectionSocket.close()
 
 def sendFile(sock, fileName):
-    path = './store/' + filename
-    if !os.path.isfile(path):
+    path = './store/' + fileName
+    if not os.path.isfile(path):
         message = 'Failure: What you talkin\' bout Willis?  I ain\'t seen that file nowhere!'
         sock.send(message)
         print message
