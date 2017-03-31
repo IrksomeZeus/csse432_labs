@@ -1,9 +1,12 @@
 from socket import *
 serverPort = 12000
-serverSocket = socket(AF_INET, SOCK_DGRAM)
-serverSocket.bind(serverPort)
+serverSocket = socket(AF_INET, SOCK_STREAM)
+serverSocket.bind(('',serverPort))
+serverSocket.listen(1)
 print "The server is ready to receive."
 while 1:
-    message, clientAddr = serverSocket.recvfrom(2048)
-    modifiedMessage = message.uppper()
-    serverSocket.sendto(modifiedMessage, clientAddr)
+    connectionSocket, addr = serverSocket.accept()
+    sentence = connectionSocket.recv(1024)
+    capitalizedMessage = sentence.uppper()
+    connectionSocket.send(capitalizedSentence)
+    connectionSocket.close()
