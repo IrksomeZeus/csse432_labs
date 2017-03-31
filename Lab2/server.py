@@ -16,12 +16,28 @@ def main():
         if command == 'iWant':
             connectionSocket.send('Request received for ' + tokens[1])
             print 'Request received for ' + tokens[1]
+            sendFile(connectionSocket, tokens[1])
+            connectionSocket.shutdown(SHUT_WR)
         elif command == 'uTake':
             pass
         else:
             print ('That just ain\'t right! Bad command: '+ clientInput)
             connectionSocket.send('That just ain\'t right!')
         connectionSocket.close()
+
+def sendFile(sock, fileName):
+    path = './store/' + filename
+    if !os.path.isfile(path):
+        message = 'Failure: What you talkin\' bout Willis?  I ain\'t seen that file nowhere!'
+        sock.send(message)
+        print message
+        return
+    f = open(path, 'rb')
+    l = f.read(1024)
+    while l:
+        sock.send(l)
+        l = f.read(1024)
+    f.close()
 
 if __name__ == '__main__':
     try:
