@@ -1,8 +1,7 @@
-from socket import *
-
-import thread
-import sys
 import re
+import sys
+import thread
+from socket import *
 
 MAX_THREADS = 5
 Num_Threads = 0
@@ -42,8 +41,10 @@ def client(client_socket, addr):
             print client_request
             if check_request(client_request):
                 # TODO open socket and send request to destination server
+                pass
             else:
                 # TODO send bad request message
+                pass
             client_request = ''
     client_socket.close()
     Num_Threads -= 1
@@ -52,9 +53,9 @@ def client(client_socket, addr):
 
 def check_request(request):
     lines = request.splitlines(True)
-    if not valid_http(lines[1]):
+    if not valid_http(lines[0]):
         return False
-    for line in lines[2:]:
+    for line in lines[1:]:
         if not valid_header(line):
             return False
     return True
