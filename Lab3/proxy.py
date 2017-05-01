@@ -40,18 +40,22 @@ def client(client_socket, addr):
         client_request = client_request + ch
         if client_request[-2:] == '\r\n':
             print client_request
-            if check_request(client_request):
+            lines = client_request.splitlines(True)
+            if check_request(lines):
                 # TODO open socket and send request to destination server
-                line = client_request.splitlines(True)[0]
+                line = lines[0]
                 method, url, http = line.split(' ')
                 url = url[7:]
                 domain, value = url.split('/', 1)
                 value = '/' + value
                 connection = 'Connection: close\r\n'
                 http = http + '\r\n'
-                url = 'Host: ' + url + '\r\n'
 
-                request = method + ' ' + value + ' ' + http + url + connection + '\r\n'
+                request = method + ' ' + value + ' ' + http
+                for line in lines[1:]:
+                    pass
+
+                request = request + connection + '\r\n'
 
                 dest_socket = socket(AF_INET, SOCK_STREAM)
                 domain = gethostbyname(domain)
@@ -73,8 +77,7 @@ def client(client_socket, addr):
     print 'Thread closed. Num Threads: ' + str(Num_Threads)
 
 
-def check_request(request):
-    lines = request.splitlines(True)
+def check_request(lines):
     if not valid_http(lines[0]):
         return False
     for line in lines[1:]:
