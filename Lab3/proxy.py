@@ -53,7 +53,11 @@ def client(client_socket, addr):
 
                 request = method + ' ' + value + ' ' + http
                 for line in lines[1:]:
-                    # do stuff here
+                    if line == '\r\n':
+                        break
+                    word, rest = line.split(' ', 1)
+                    if not 'Connection:' == word:
+                        request = request + line
                     pass
 
                 request = request + connection + '\r\n'
