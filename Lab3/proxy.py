@@ -53,6 +53,7 @@ def client(client_socket, addr):
 
                 request = method + ' ' + value + ' ' + http
                 for line in lines[1:]:
+                    # do stuff here
                     pass
 
                 request = request + connection + '\r\n'
