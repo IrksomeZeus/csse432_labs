@@ -1,9 +1,8 @@
 import re
-import sys
 import thread
 from socket import *
 
-MAX_THREADS = 5
+MAX_THREADS = 100
 Num_Threads = 0
 Server_Socket = ''
 
@@ -41,7 +40,28 @@ def client(client_socket, addr):
             print client_request
             if check_request(client_request):
                 # TODO open socket and send request to destination server
-                pass
+                line = client_request.splitlines(True)[0]
+                method, url, http = line.split(' ')
+                url = url[7:]
+                domain, value = url.split('/', 1)
+                value = '/' + value
+                connection = 'Connection: close\r\n'
+                http = http + '\r\n'
+                url = 'Host: ' + url + '\r\n'
+
+                request = method + ' ' + value + ' ' + http + url + connection + '\r\n'
+
+                dest_socket = socket(AF_INET, SOCK_STREAM)
+                domain = gethostbyname(domain)
+                dest_socket.connect((domain, 80))
+                dest_socket.sendall(request)
+                while True:
+                    data = dest_socket.recv(4096)
+                    if len(data) == 0 or data == '':
+                        break
+                    else:
+                        client_socket.sendall(data)
+                break
             else:
                 # TODO send bad request message
                 pass
@@ -62,13 +82,21 @@ def check_request(request):
 
 
 def valid_http(text):
-    http_pattern = re.compile("([A-Z])+[ ]([\w\d.-])+:[0-9]+[ ]HTTP\/[\d.]+\r\n")
-    return http_pattern.match(text)
+    http_pattern = re.compile("([A-Z])+ http:\/\/([^\s])+ HTTP\/1.0\r\n")
+    if http_pattern.match(text):
+        return True
+    else:
+        return False
 
 
 def valid_header(text):
-    header_pattern = re.compile("(.[^ ])+: (.[^ ])+\r\n")
-    return header_pattern.match(text)
+    if text == '\r\n':
+        return True
+    header_pattern = re.compile("([^\s])+: .+\r\n")
+    if header_pattern.match(text):
+        return True
+    else:
+        return False
 
 
 if __name__ == '__main__':
