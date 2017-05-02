@@ -18,13 +18,11 @@ def main():
     Server_Socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     Server_Socket.bind((host, port))
     Server_Socket.listen(1)
-    print 'The server has started\nHost ' + host + ' Port ' + str(port)
     while True:
         connection, addr = Server_Socket.accept()
         if Num_Threads < MAX_THREADS:
             thread.start_new_thread(client, (connection, addr))
             Num_Threads += 1
-            print 'Thread Created. Num Threads: ' + str(Num_Threads)
         else:
             connection.close()
 
@@ -35,40 +33,46 @@ def client(client_socket, addr):
     while True:
         ch = client_socket.recv(1024)
         if len(ch) == 0:
-            print 'Closing Client.'
             break
         client_request = client_request + ch
         if client_request[-2:] == '\r\n':
-            print client_request
             lines = client_request.splitlines(True)
             if check_request(lines):
-                print 'Passed Checks'
-                # TODO open socket and send request to destination server
                 line = lines[0]
                 method, url, http = line.split(' ')
                 url = url[7:]
                 domain, value = url.split('/', 1)
                 value = '/' + value
                 connection = 'Connection: close\r\n'
-                http = http
+
+                if not method == 'GET':
+                    client_socket.sendall("Not Implemented (500)")
+                    client_socket.close()
+                    Num_Threads -= 1
+                    return
 
                 request = method + ' ' + value + ' ' + http
-                word, rest = lines[1].split(' ', 1)
-                start = 1
-                if word == 'Host:':
-                    request = request + lines[1]
-                    start = 2
-                else:
+
+                first = True
+                if len(lines) == 1:
                     request = request + 'Host: ' + domain + '\r\n'
-                for line in lines[start:]:
+                for line in lines[1:]:
                     if line == '\r\n':
+                        first = False
                         continue
                     word, rest = line.split(' ', 1)
-                    if not 'Connection:' == word:
+                    if first:
+                        if word == 'Host:':
+                            request = request + line
+                            first = False
+                            continue
+                        else:
+                            first = False
+                            request = request + 'Host: ' + domain + '\r\n'
+                    if not 'Connection:' == word and not 'Upgrade-Insecure-Requests' == word:
                         request = request + line
 
                 request = request + connection + '\r\n'
-                print '\n' + request + '\n'
                 dest_socket = socket(AF_INET, SOCK_STREAM)
                 domain = gethostbyname(domain)
                 dest_socket.connect((domain, 80))
@@ -81,29 +85,26 @@ def client(client_socket, addr):
                         client_socket.sendall(data)
                 break
             else:
-                # TODO send bad request message
-                pass
+                client_socket.sendall("Bad Request (400)")
+                client_socket.close()
+                Num_Threads -= 1
+                return
             client_request = ''
     client_socket.close()
     Num_Threads -= 1
-    print 'Thread closed. Num Threads: ' + str(Num_Threads)
 
 
 def check_request(lines):
-    print "Checking request"
     if not valid_http(lines[0]):
-        print "Not valid http"
-        return False
+        return 'Bad Request'
     for line in lines[1:]:
         if not valid_header(line):
-            print "Not Valid header"
-            return False
-    return True
+            return 'Bad Request'
+    return 'Good'
 
 
 def valid_http(text):
     http_pattern = re.compile("([A-Z])+ (http|HTTP):\/\/[^\s]+ HTTP\/1.0\r\n")
-    print repr(text)
     if http_pattern.match(text):
         return True
     else:
