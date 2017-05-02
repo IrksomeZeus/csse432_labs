@@ -42,6 +42,7 @@ def client(client_socket, addr):
             print client_request
             lines = client_request.splitlines(True)
             if check_request(lines):
+                print 'Passed Checks'
                 # TODO open socket and send request to destination server
                 line = lines[0]
                 method, url, http = line.split(' ')
@@ -49,19 +50,25 @@ def client(client_socket, addr):
                 domain, value = url.split('/', 1)
                 value = '/' + value
                 connection = 'Connection: close\r\n'
-                http = http + '\r\n'
+                http = http
 
                 request = method + ' ' + value + ' ' + http
-                for line in lines[1:]:
+                word, rest = lines[1].split(' ', 1)
+                start = 1
+                if word == 'Host:':
+                    request = request + lines[1]
+                    start = 2
+                else:
+                    request = request + 'Host: ' + domain + '\r\n'
+                for line in lines[start:]:
                     if line == '\r\n':
-                        break
+                        continue
                     word, rest = line.split(' ', 1)
                     if not 'Connection:' == word:
                         request = request + line
-                    pass
 
                 request = request + connection + '\r\n'
-
+                print '\n' + request + '\n'
                 dest_socket = socket(AF_INET, SOCK_STREAM)
                 domain = gethostbyname(domain)
                 dest_socket.connect((domain, 80))
@@ -83,16 +90,20 @@ def client(client_socket, addr):
 
 
 def check_request(lines):
+    print "Checking request"
     if not valid_http(lines[0]):
+        print "Not valid http"
         return False
     for line in lines[1:]:
         if not valid_header(line):
+            print "Not Valid header"
             return False
     return True
 
 
 def valid_http(text):
-    http_pattern = re.compile("([A-Z])+ http:\/\/([^\s])+ HTTP\/1.0\r\n")
+    http_pattern = re.compile("([A-Z])+ (http|HTTP):\/\/[^\s]+ HTTP\/1.0\r\n")
+    print repr(text)
     if http_pattern.match(text):
         return True
     else:
